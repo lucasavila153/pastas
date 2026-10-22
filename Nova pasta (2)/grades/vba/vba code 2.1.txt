@@ -1,0 +1,188 @@
+Option Explicit
+
+Public Sub AtualizarCavidades()
+
+Dim ws As Worksheet
+Dim ultimaLinha As Long
+Dim linha As Long
+
+Set ws = ActiveSheet
+
+ultimaLinha = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+'==================================================
+' LADO ESQUERDO
+' Cavidade = A
+' SIM = G
+' NÃO = I
+'==================================================
+
+For linha = 1 To ultimaLinha
+
+If Trim(ws.Cells(linha, "A").Value) <> "" Then
+
+AtualizarGrupo _
+ws, _
+CStr(ws.Cells(linha, "A").Value), _
+ws.Cells(linha, "G").Value, _
+ws.Cells(linha, "I").Value
+
+End If
+
+Next linha
+
+
+'==================================================
+' LADO DIREITO
+' Cavidade = K
+' SIM = Q
+' NÃO = S
+'==================================================
+
+ultimaLinha = ws.Cells(ws.Rows.Count, "K").End(xlUp).Row
+
+For linha = 1 To ultimaLinha
+
+If Trim(ws.Cells(linha, "K").Value) <> "" Then
+
+AtualizarGrupo _
+ws, _
+CStr(ws.Cells(linha, "K").Value), _
+ws.Cells(linha, "Q").Value, _
+ws.Cells(linha, "S").Value
+
+End If
+
+Next linha
+
+End Sub
+
+
+Private Sub AtualizarGrupo( _
+ByVal ws As Worksheet, _
+ByVal numeroCavidade As String, _
+ByVal valorSim As String, _
+ByVal valorNao As String)
+
+Dim shp As Shape
+Dim simMarcado As Boolean
+Dim naoMarcado As Boolean
+
+simMarcado = (UCase(Trim(valorSim)) = "X")
+naoMarcado = (UCase(Trim(valorNao)) = "X")
+
+
+'==================================================
+' SITUAÇÃO INVÁLIDA
+' SIM E NÃO MARCADOS AO MESMO TEMPO
+'==================================================
+
+If simMarcado And naoMarcado Then
+
+MsgBox "A cavidade " & numeroCavidade & _
+" está marcada como SIM e NÃO ao mesmo tempo.", _
+vbExclamation, _
+"Vedação"
+
+Exit Sub
+
+End If
+
+
+'==================================================
+' PROCURA O GRUPO DA CAVIDADE
+'==================================================
+
+For Each shp In ws.Shapes
+
+If shp.Type = msoGroup Then
+
+If GrupoContemNumero(shp, numeroCavidade) Then
+
+If simMarcado Then
+
+PintarGrupo shp, RGB(255, 0, 0)
+
+ElseIf naoMarcado Then
+
+PintarGrupo shp, RGB(255, 255, 0)
+
+Else
+
+'Nenhuma marcação.
+'Mantém a cor atual.
+
+End If
+
+Exit For
+
+End If
+
+End If
+
+Next shp
+
+End Sub
+
+
+Private Function GrupoContemNumero( _
+ByVal grupo As Shape, _
+ByVal numeroProcurado As String) As Boolean
+
+Dim i As Long
+Dim texto As String
+
+On Error GoTo Fim
+
+For i = 1 To grupo.GroupItems.Count
+
+texto = ""
+
+On Error Resume Next
+
+texto = grupo.GroupItems(i).TextFrame2.TextRange.Text
+
+On Error GoTo Fim
+
+texto = Trim(texto)
+
+If texto = numeroProcurado Then
+
+GrupoContemNumero = True
+Exit Function
+
+End If
+
+Next i
+
+Fim:
+
+End Function
+
+
+Private Sub PintarGrupo( _
+ByVal grupo As Shape, _
+ByVal cor As Long)
+
+Dim i As Long
+Dim item As Shape
+
+On Error Resume Next
+
+For i = 1 To grupo.GroupItems.Count
+
+Set item = grupo.GroupItems(i)
+
+'Não altera a caixa de texto do número
+If item.Type <> msoTextBox Then
+
+item.Fill.ForeColor.RGB = cor
+item.Fill.Transparency = 0
+
+End If
+
+Next i
+
+On Error GoTo 0
+
+End Sub

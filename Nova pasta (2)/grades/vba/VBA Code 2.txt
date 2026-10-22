@@ -1,0 +1,21 @@
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+   On Error GoTo Fim
+
+
+   'Verificar somente as colunas relacionadas à vedação
+   If Intersect(Target, Me.Range("G:G,I:I,Q:Q,S:S")) Is Nothing Then
+
+   Exit Sub
+
+  End If
+
+  Application.EnableEvents=False
+
+  AtualizarCavidades
+
+Fim:
+
+  Application.EnableEvents=True
+
+End Sub

@@ -1,0 +1,225 @@
+Option Explicit
+
+'========================================================
+' ATUALIZA TODAS AS CAVIDADES DO DESENHO
+'
+' LADO ESQUERDO:
+' Cavidade = A | SIM = G | NÃO = I
+'
+' LADO DIREITO:
+' Cavidade = K | SIM = Q | NÃO = S
+'========================================================
+
+Public Sub AtualizarCavidades()
+
+AtualizarCavidadesDaPlanilha ActiveSheet
+
+End Sub
+
+
+Public Sub AtualizarCavidadesDaPlanilha(ByVal ws As Worksheet)
+
+Dim ultimaLinha As Long
+Dim linha As Long
+
+'----------------------------------------------
+' LADO ESQUERDO
+'----------------------------------------------
+
+ultimaLinha = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+For linha = 1 To ultimaLinha
+
+If Trim(CStr(ws.Cells(linha, "A").Value)) <> "" Then
+
+AtualizarGrupo ws, _
+Trim(CStr(ws.Cells(linha, "A").Value)), _
+ws.Cells(linha, "G").Value, _
+ws.Cells(linha, "I").Value
+
+End If
+
+Next linha
+
+'----------------------------------------------
+' LADO DIREITO
+'----------------------------------------------
+
+ultimaLinha = ws.Cells(ws.Rows.Count, "K").End(xlUp).Row
+
+For linha = 1 To ultimaLinha
+
+If Trim(CStr(ws.Cells(linha, "K").Value)) <> "" Then
+
+AtualizarGrupo ws, _
+Trim(CStr(ws.Cells(linha, "K").Value)), _
+ws.Cells(linha, "Q").Value, _
+ws.Cells(linha, "S").Value
+
+End If
+
+Next linha
+
+End Sub
+
+
+'========================================================
+' DEFINE A COR DE CADA CAVIDADE
+'========================================================
+
+Private Sub AtualizarGrupo( _
+ByVal ws As Worksheet, _
+ByVal numeroCavidade As String, _
+ByVal valorSim As Variant, _
+ByVal valorNao As Variant)
+
+Dim shp As Shape
+Dim cor As Long
+Dim restaurar As Boolean
+Dim simMarcado As Boolean
+Dim naoMarcado As Boolean
+
+simMarcado = (UCase(Trim(CStr(valorSim))) = "X")
+naoMarcado = (UCase(Trim(CStr(valorNao))) = "X")
+
+'Não altera a cavidade se SIM e NÃO
+'estiverem marcados ao mesmo tempo.
+If simMarcado And naoMarcado Then Exit Sub
+
+If simMarcado Then
+
+cor = RGB(255, 0, 0)
+restaurar = False
+
+ElseIf naoMarcado Then
+
+cor = RGB(255, 255, 0)
+restaurar = False
+
+Else
+
+'Nenhum X: preenchimento branco.
+restaurar = True
+
+End If
+
+'Procura o grupo correspondente à cavidade.
+For Each shp In ws.Shapes
+
+If LocalizarEPintarCavidade( _
+shp, numeroCavidade, cor, restaurar) Then
+
+Exit For
+
+End If
+
+Next shp
+
+End Sub
+
+
+'========================================================
+' LOCALIZA O NÚMERO E PINTA SOMENTE O CÍRCULO
+'========================================================
+
+Private Function LocalizarEPintarCavidade( _
+ByVal shp As Shape, _
+ByVal numero As String, _
+ByVal cor As Long, _
+ByVal restaurar As Boolean) As Boolean
+
+Dim i As Long
+Dim item As Shape
+Dim texto As String
+Dim encontrouNumero As Boolean
+
+On Error GoTo Fim
+
+If shp.Type <> msoGroup Then Exit Function
+
+'Procura o número dentro do grupo atual.
+For i = 1 To shp.GroupItems.Count
+
+Set item = shp.GroupItems(i)
+texto = ""
+
+On Error Resume Next
+
+If item.TextFrame2.HasText = msoTrue Then
+texto = Trim(item.TextFrame2.TextRange.Text)
+End If
+
+On Error GoTo Fim
+
+'Comparação exata para evitar confundir 1 com 10.
+If texto = numero Then
+
+encontrouNumero = True
+Exit For
+
+End If
+
+Next i
+
+'Se encontrou o número, procura a forma oval.
+If encontrouNumero Then
+
+For i = 1 To shp.GroupItems.Count
+
+Set item = shp.GroupItems(i)
+
+If item.Type = msoAutoShape Then
+
+If item.AutoShapeType = msoShapeOval Then
+
+If restaurar Then
+
+'Sem X: branco.
+item.Fill.Visible = msoTrue
+item.Fill.ForeColor.RGB = _
+RGB(255, 255, 255)
+item.Fill.Transparency = 0
+
+Else
+
+'SIM: vermelho | NÃO: amarelo.
+item.Fill.Visible = msoTrue
+item.Fill.ForeColor.RGB = cor
+item.Fill.Transparency = 0
+
+End If
+
+LocalizarEPintarCavidade = True
+Exit Function
+
+End If
+
+End If
+
+Next i
+
+End If
+
+'Se não encontrou neste grupo, procura
+'nos grupos internos.
+For i = 1 To shp.GroupItems.Count
+
+Set item = shp.GroupItems(i)
+
+If item.Type = msoGroup Then
+
+If LocalizarEPintarCavidade( _
+item, numero, cor, restaurar) Then
+
+LocalizarEPintarCavidade = True
+Exit Function
+
+End If
+
+End If
+
+Next i
+
+Fim:
+
+End Function

@@ -1,0 +1,94 @@
+Option Explicit
+
+'==============================================================
+'ATUALIZA AS CORES DAS CAVIDADES
+'==============================================================
+
+Public Sub AtualizarCavidades()
+  
+  Dim ws As Worksheet
+  Dim shp As Shape
+  Dim numeroCavidade As String
+  Dim linha As Long
+  
+  Set ws = ActiveSheet
+  
+  'Percore todas as formas existentes na planilha
+  For Each shp In ws.Shapes
+  
+      'verificar se a forma é um grupo
+      If shp.Type = msoGrup Then
+      
+        'Obtém o número da cavidade dentro do grupo
+        muneroCavidade = ObterNumeroCavidade(shp)
+        
+        If numeroCavidade <> "" Then
+        
+         'Procura a cavidade na coluna A
+         lilnha = ProcuraCavidade(ws, numeroCavidade)
+         
+         If linha > 0 Then
+         
+            'Lê a situação da vedação
+            statusVedacao = UCase(Trim(ws.Cells(linha, 3).Value))
+            
+            'Aplicar a cor
+            Select Case statusVedacao
+            
+               Case "sim"
+                 PintarCavidade shp, RGB(255, 0, 0)
+                 
+               Case "Não", "Não"
+                 PintarCavidade shp, RGB(255, 255, 0)
+                 
+               Case Else
+                 'Sem informação: não altera
+                 
+                End Select
+                
+              End If
+              
+           End If
+           
+         End If
+         
+       Next shp
+       
+End Sub
+
+
+'==============================================================
+'PROCURAR NÚMERO DA CAVIDADE DENTRO DO GRUPO
+'==============================================================
+
+Private Function ObterNumeroCavidade(ByVal grupo As Shape) As String
+
+    Dim i As Long
+    Dim texto As String
+    
+    On Erro GoTo Fim
+    
+    For i = 1 To grupo.GroupItems.Count
+    
+      texto = Trim(texto)
+      
+      'Verifica se o texto é numérico
+      If IsNumeric(texto) Then
+      
+        ObterNumeroCavidade = CStr(CLng(texto))
+        Exit Function
+        
+      End If
+      
+    Next i
+    
+Fim:
+  
+End Function
+
+
+'==============================================================
+'PROCURAR CAVIDADES NA PLANILHA
+'==============================================================
+
+End Function

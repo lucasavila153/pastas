@@ -1,0 +1,72 @@
+Option Explicit
+
+' ===== AJUSTES =====
+Private Const NOME_PLANILHA As String = "Plan1"
+Private Const LINHA_INICIAL As Long = 4
+Private Const LINHA_FINAL As Long = 80
+
+' Colunas: número da cavidade, Sim e Não
+' Bloco esquerdo: A (nº), G (Sim), I (Não)
+' Bloco direito: K (nº), Q (Sim), S (Não)
+
+' Recolore todas as cavidades de uma vez (útil ao abrir o arquivo)
+Public Sub AtualizarTodasCavidades()
+Dim ws As Worksheet
+Dim r As Long
+
+Set ws = ThisWorkbook.Worksheets(NOME_PLANILHA)
+
+Application.ScreenUpdating = False
+For r = LINHA_INICIAL To LINHA_FINAL
+AtualizarLinha ws, r, 1, 7, 9
+AtualizarLinha ws, r, 11, 17, 19
+Next r
+Application.ScreenUpdating = True
+End Sub
+
+' Define a cor da cavidade de uma linha conforme o X em Sim/Não
+Public Sub AtualizarLinha(ws As Worksheet, ByVal r As Long, _
+ByVal cNum As Long, ByVal cSim As Long, ByVal cNao As Long)
+Dim numTxt As String
+Dim cor As Long
+
+numTxt = Trim$(CStr(ws.Cells(r, cNum).Value))
+If numTxt = "" Then Exit Sub
+
+If UCase$(Trim$(CStr(ws.Cells(r, cSim).Value))) = "X" Then
+cor = RGB(255, 0, 0) ' vermelho: exige vedação
+ElseIf UCase$(Trim$(CStr(ws.Cells(r, cNao).Value))) = "X" Then
+cor = RGB(255, 255, 0) ' amarelo: não exige vedação
+Else
+cor = RGB(255, 255, 255) ' sem marcação: branco
+End If
+
+PintarCavidade ws, numTxt, cor
+End Sub
+
+' Procura, em todas as formas da planilha, a que tem o número da cavidade
+Public Sub PintarCavidade(ws As Worksheet, ByVal numTxt As String, ByVal cor As Long)
+Dim shp As Shape
+For Each shp In ws.Shapes
+PintarRecursivo shp, numTxt, cor
+Next shp
+End Sub
+
+' Trata formas agrupadas (grupos dentro de grupos incluídos)
+Private Sub PintarRecursivo(shp As Shape, ByVal numTxt As String, ByVal cor As Long)
+Dim i As Long
+
+If shp.Type = msoGroup Then
+For i = 1 To shp.GroupItems.Count
+PintarRecursivo shp.GroupItems(i), numTxt, cor
+Next i
+ElseIf shp.HasTextFrame Then
+If shp.TextFrame.HasText Then
+If Trim$(shp.TextFrame.Characters.Text) = numTxt Then
+shp.Fill.Visible = msoTrue
+shp.Fill.Solid
+shp.Fill.ForeColor.RGB = cor
+End If
+End If
+End If
+End Sub

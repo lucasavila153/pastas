@@ -1,0 +1,14 @@
+Option Explicit
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+Dim c As Range
+
+For Each c In Target.Cells
+Select Case c.Column
+Case 7, 9 ' G e I (bloco esquerdo)
+AtualizarLinha Me, c.Row, 1, 7, 9
+Case 17, 19 ' Q e S (bloco direito)
+AtualizarLinha Me, c.Row, 11, 17, 19
+End Select
+Next c
+End Sub

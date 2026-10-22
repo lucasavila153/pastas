@@ -1,0 +1,11 @@
+Option Explicit
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+If Intersect(Target, Me.Range("G:G,I:I,Q:Q,S:S")) _
+ Is Nothing Then Exit Sub
+ 
+MsgBox "Evento funcionando! Célula alerada:" & _
+    Target.Cells(1, 1).Address(False, False)
+    
+End Sub

@@ -1,0 +1,19 @@
+Option Explicit
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+On Error GoTo Finalizar
+
+'Monitora somente as colunas de marcação.
+If Intersect(Target, Me.Range("G:G,I:I,Q:Q,S:S")) _
+Is Nothing Then Exit Sub
+
+Application.EnableEvents = False
+
+AtualizarCavidadesDaPlanilha Me
+
+Finalizar:
+
+Application.EnableEvents = True
+
+End Sub
